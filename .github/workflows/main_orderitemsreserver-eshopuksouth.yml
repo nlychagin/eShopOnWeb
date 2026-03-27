@@ -1,4 +1,4 @@
-name: Build and deploy .NET 10 to OrderItemsReserver-eshopuksouth
+name: Build & Deploy OrderItemsReserver
 
 on:
   push:
@@ -6,53 +6,37 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  DOTNET_VERSION: '8.0'
-
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
+    env:
+      DOTNET_VERSION: '8.0'
+      FUNCTION_APP_NAME: 'OrderItemsReserver-eshopuksouth'
+
     steps:
-      - name: 'Checkout GitHub Action'
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: 'Build and Publish'
-        shell: bash
+      - name: Restore & Publish
         run: |
-          dotnet clean src/OrderItemsReserver/OrderItemsReserver.csproj
-          dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj \
-              -c Release \
-              -r linux-x64 \
-              --self-contained true \
-              -p:PublishSingleFile=true \
-              -p:PublishTrimmed=false \
-              -o ./publish-out
+          cd OrderItemsReserver
+          dotnet restore
+          dotnet publish -c Release -o ./publish
 
-      - name: Inspect publish output
+      - name: Package Function
         run: |
-          echo "=== FILES IN PUBLISH-OUT ==="
-          ls -R ./publish-out
+          cd OrderItemsReserver/publish
+          zip -r ../../release.zip .
 
-      - name: 'Package for Flex Consumption'
-        shell: bash
-        run: |
-          cd ./publish-out
-          zip -r ../release.zip .
-
-      - name: Inspect zip contents
-        run: |
-          unzip -l release.zip
-
-      - name: 'Deploy to Azure'
+      - name: Deploy
         uses: Azure/functions-action@v1
         with:
-          app-name: 'OrderItemsReserver-eshopuksouth'
+          app-name: ${{ env.FUNCTION_APP_NAME }}
           package: './release.zip'
           publish-profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_PROFILE_API_SOUTH }}
-          sku: 'flexconsumption'
