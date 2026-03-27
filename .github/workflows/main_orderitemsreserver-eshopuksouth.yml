@@ -24,13 +24,15 @@ jobs:
 
       - name: 'Build and Publish'
         shell: bash
-        # Added -p:PublishReadyToRun=false to ensure metadata isn't stripped
         run: |
           dotnet clean src/OrderItemsReserver/OrderItemsReserver.csproj
           dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj \
-              --configuration Release \
-              --output ./publish-out \
-              -p:PublishReadyToRun=false
+              -c Release \
+              -r linux-x64 \
+              --self-contained true \
+              -p:PublishSingleFile=true \
+              -p:PublishTrimmed=false \
+              -o ./publish-out
 
       - name: Inspect publish output
         run: |
