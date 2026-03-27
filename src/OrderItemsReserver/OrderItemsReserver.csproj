@@ -5,12 +5,13 @@
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <SuppressAzureFunctionsSdkChecks>true</SuppressAzureFunctionsSdkChecks>
     <_FunctionsSkipTargetFrameworkCheck>true</_FunctionsSkipTargetFrameworkCheck>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Functions.Worker" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" OutputItemType="Analyzer" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" OutputItemType="Analyzer" ExcludeAssets="All" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs" />
     <PackageReference Include="Azure.Identity" />
