@@ -6,7 +6,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
+    <AzureFunctionsTargetFramework>net8.0</AzureFunctionsTargetFramework>
     <_FunctionsSkipTargetFrameworkCheck>true</_FunctionsSkipTargetFrameworkCheck>
+    <SkipFunctionsSdkCheck>true</SkipFunctionsSdkCheck>
   </PropertyGroup>
 
   <ItemGroup>
