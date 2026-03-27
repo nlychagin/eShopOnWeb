@@ -7,7 +7,6 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'src/OrderItemsReserver'
   DOTNET_VERSION: '10.0'
 
 jobs:
@@ -25,8 +24,7 @@ jobs:
 
       - name: 'Build and Publish'
         shell: bash
-        run: |
-          dotnet publish ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/OrderItemsReserver.csproj --configuration Release --output ./publish-output
+        run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --output ./publish-output --runtime linux-x64 --self-contained true
 
       - name: 'Deploy to Azure'
         uses: Azure/functions-action@v1
