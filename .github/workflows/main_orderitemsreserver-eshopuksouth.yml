@@ -24,7 +24,7 @@ jobs:
 
       - name: 'Build and Publish'
         shell: bash
-        run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --output ./publish-output --runtime linux-x64 --self-contained true
+        run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --output ./publish-output --runtime linux-x64 --self-contained true /p:_FunctionsSkipTargetFrameworkCheck=true
 
       - name: 'Deploy to Azure'
         uses: Azure/functions-action@v1
