@@ -6,6 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
+    <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+    <ForceGenerateFunctionMetadata>true</ForceGenerateFunctionMetadata>
   </PropertyGroup>
 
   <ItemGroup>

@@ -24,17 +24,17 @@ jobs:
 
       - name: 'Build and Publish'
         shell: bash
+        # Added -p:PublishReadyToRun=false to ensure metadata isn't stripped
         run: |
           dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj \
             --configuration Release \
             --output ./publish-out \
             --runtime linux-x64 \
-            --self-contained true
+            --self-contained true \
+            -p:PublishReadyToRun=false
 
       - name: 'Package for Flex Consumption'
         shell: bash
-        # We enter the output folder to zip its CONTENTS, not the folder itself.
-        # This prevents the 'nested folder' structure that causes 404s in Flex.
         run: |
           cd ./publish-out
           zip -r ../release.zip .
