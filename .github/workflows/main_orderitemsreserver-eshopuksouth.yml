@@ -1,42 +1,37 @@
-name: Build & Deploy OrderItemsReserver
+name: Deploy OrderItemsReserver Azure Function
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+    paths:
+      - 'src/OrderItemsReserver/**'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
 
-    env:
-      DOTNET_VERSION: '8.0'
-      FUNCTION_APP_NAME: 'OrderItemsReserver-eshopuksouth'
-
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: '8.0.x'
 
-      - name: Restore & Publish
-        run: |
-          cd OrderItemsReserver
-          dotnet restore
-          dotnet publish -c Release -o ./publish
+      - name: Restore dependencies
+        run: dotnet restore src/OrderItemsReserver/OrderItemsReserver.csproj
 
-      - name: Package Function
-        run: |
-          cd OrderItemsReserver/publish
-          zip -r ../../release.zip .
+      - name: Build
+        run: dotnet build src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --no-restore
 
-      - name: Deploy
+      - name: Publish
+        run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --no-build --output ./publish
+
+      - name: Deploy to Azure Function App
         uses: Azure/functions-action@v1
         with:
-          app-name: ${{ env.FUNCTION_APP_NAME }}
-          package: './release.zip'
+          app-name: OrderItemsReserver-eshopuksouth
+          package: ./publish
           publish-profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_PROFILE_API_SOUTH }}
