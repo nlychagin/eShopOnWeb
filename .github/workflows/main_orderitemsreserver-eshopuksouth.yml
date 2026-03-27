@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOTNET_VERSION: '10.0'
+  DOTNET_VERSION: '8.0'
 
 jobs:
   build-and-deploy:
@@ -29,15 +29,22 @@ jobs:
           dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj \
             --configuration Release \
             --output ./publish-out \
-            --runtime linux-x64 \
-            --self-contained true \
             -p:PublishReadyToRun=false
+
+      - name: Inspect publish output
+        run: |
+          echo "=== FILES IN PUBLISH-OUT ==="
+          ls -R ./publish-out
 
       - name: 'Package for Flex Consumption'
         shell: bash
         run: |
           cd ./publish-out
           zip -r ../release.zip .
+
+      - name: Inspect zip contents
+        run: |
+          unzip -l release.zip
 
       - name: 'Deploy to Azure'
         uses: Azure/functions-action@v1
