@@ -24,12 +24,25 @@ jobs:
 
       - name: 'Build and Publish'
         shell: bash
-        run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --output ./publish-output --runtime linux-x64 --self-contained true
+        run: |
+          dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj \
+            --configuration Release \
+            --output ./publish-out \
+            --runtime linux-x64 \
+            --self-contained true
+
+      - name: 'Package for Flex Consumption'
+        shell: bash
+        # We enter the output folder to zip its CONTENTS, not the folder itself.
+        # This prevents the 'nested folder' structure that causes 404s in Flex.
+        run: |
+          cd ./publish-out
+          zip -r ../release.zip .
 
       - name: 'Deploy to Azure'
         uses: Azure/functions-action@v1
         with:
           app-name: 'OrderItemsReserver-eshopuksouth'
-          package: './publish-output'
+          package: './release.zip'
           publish-profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_PROFILE_API_SOUTH }}
           sku: 'flexconsumption'
