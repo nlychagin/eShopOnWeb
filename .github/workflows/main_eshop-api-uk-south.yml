@@ -47,19 +47,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: .api-app-artifact
-      
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_626F56FD58524AEEBE3F05EA61B6F233 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_825BA057B2354637B8DEF06EFC93C1F9 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_ABF3B39EA1BD432984C498A8D84CC1B1 }}
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'eshop-api-uk-south'
-          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_API }}
           package: .
           

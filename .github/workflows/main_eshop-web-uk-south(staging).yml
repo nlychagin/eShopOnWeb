@@ -48,18 +48,11 @@ jobs:
         with:
           name: .web-app-artifact
       
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_304F1F626E0242739C2E0656551C794E }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_AE24D6E71E6B4CECABFB780F2039C65A }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3EC1357C84304EF184B2B0290D7B2F6F }}
-
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'eshop-web-uk-south'
-          slot-name: 'staging'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_WEB }}
           package: .
           
