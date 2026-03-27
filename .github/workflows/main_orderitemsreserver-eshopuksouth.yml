@@ -26,10 +26,11 @@ jobs:
         shell: bash
         # Added -p:PublishReadyToRun=false to ensure metadata isn't stripped
         run: |
+          dotnet clean src/OrderItemsReserver/OrderItemsReserver.csproj
           dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj \
-            --configuration Release \
-            --output ./publish-out \
-            -p:PublishReadyToRun=false
+              --configuration Release \
+              --output ./publish-out \
+              -p:PublishReadyToRun=false
 
       - name: Inspect publish output
         run: |
