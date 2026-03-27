@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-#    paths:
-#      - 'src/OrderItemsReserver/**'
 
 jobs:
   build-and-deploy:
@@ -30,7 +28,7 @@ jobs:
         run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --no-build --output ./publish
 
       - name: Deploy to Azure Function App
-        uses: Azure/functions-action@v2
+        uses: Azure/functions-action@v1
         with:
           app-name: OrderItemsReserver-eshopuksouth
           package: ./publish
