@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/OrderItemsReserver/**'
 
 jobs:
   build-and-deploy:
@@ -18,21 +20,12 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Restore dependencies
-        run: dotnet restore src/OrderItemsReserver/OrderItemsReserver.csproj
-
-      - name: Build
-        run: dotnet build src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --no-restore
-
       - name: Publish
-        run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --no-build --output ./publish
-
-      - name: Zip publish output
-        run: cd ./publish && zip -r ../publish.zip .
+        run: dotnet publish src/OrderItemsReserver/OrderItemsReserver.csproj --configuration Release --output ./publish
 
       - name: Deploy to Azure Function App
         uses: Azure/functions-action@v1
         with:
           app-name: OrderItemsReserver-eshopuksouth
-          package: ./publish.zip
+          package: ./publish
           publish-profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_PROFILE_API_SOUTH }}
