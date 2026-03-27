@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'src/OrderItemsReserver/**'
+#    paths:
+#      - 'src/OrderItemsReserver/**'
 
 jobs:
   build-and-deploy:
@@ -37,4 +37,3 @@ jobs:
           publish-profile: ${{ secrets.AZURE_FUNCTION_PUBLISH_PROFILE_API_SOUTH }}
           scm-do-build-during-deployment: false
           enable-oryx-build: false
-      
