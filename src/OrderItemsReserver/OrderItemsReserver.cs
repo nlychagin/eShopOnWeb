@@ -15,21 +15,22 @@ namespace eShopOnWeb.OrderItemsReserver
         }
 
         [Function("OrderItemsReserver")]
-        [BlobOutput("orders/{sys.randguid}.json", Connection = "AzureWebJobsStorage")]
         public async Task<HttpResponseData> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req)
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req,
+            [BlobOutput("orders/{sys.randguid}.json", Connection = "AzureWebJobsStorage")] IAsyncCollector<string> blobCollector)
         {
             _logger.LogInformation("Processing order reservation request.");
 
-            // Read the JSON from the web request
+            // Read the JSON from the HTTP request
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
-            // Create a response to send back to the eShop website
+            // Write to Blob
+            await blobCollector.AddAsync(requestBody);
+
+            // Create HTTP response
             var response = req.CreateResponse(HttpStatusCode.OK);
             await response.WriteStringAsync("Order processed and saved to storage.");
 
-            // The return value of this method is what the BlobOutput binding saves
-            // In Isolated mode, we return the response object
             return response;
         }
     }
