@@ -30,8 +30,8 @@ jobs:
             --output ./publish-output \
             --runtime linux-x64 \
             --self-contained true \
-            /p:_FunctionsSkipTargetFrameworkCheck=true \
-            /p:SkipFunctionsSdkCheck=true
+            -p:SkipFunctionsSdkCheck=true \
+            -p:_FunctionsSkipTargetFrameworkCheck=true
 
       - name: 'Deploy to Azure'
         uses: Azure/functions-action@v1
