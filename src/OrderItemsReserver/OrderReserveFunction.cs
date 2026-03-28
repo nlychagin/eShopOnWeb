@@ -24,8 +24,11 @@ public class OrderReserveFunction
         // Read the request body
         var body = await new StreamReader(req.Body).ReadToEndAsync();
 
-        // Deserialize and validate
-        var items = JsonSerializer.Deserialize<List<OrderItem>>(body);
+        var items = JsonSerializer.Deserialize<List<OrderItem>>(body, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
         if (items == null || items.Count == 0)
         {
             var badResponse = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
