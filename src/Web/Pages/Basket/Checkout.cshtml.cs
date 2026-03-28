@@ -79,32 +79,32 @@ public class CheckoutModel : PageModel
     }
 
     private async Task ReserveOrderItemsAsync(IReadOnlyCollection<BasketItemViewModel> items)
-    {
-        var orderItems = items.Select(i => new { itemId = i.Id, quantity = i.Quantity });
-        var json = JsonSerializer.Serialize(orderItems);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        var functionUrl = _configuration["OrderItemsReserverUrl"];
-        if (string.IsNullOrEmpty(functionUrl))
         {
-            _logger.LogWarning("OrderItemsReserverUrl is not configured.");
-            return;
-        }
+            var orderItems = items.Select(i => new { itemId = i.CatalogItemId, quantity = i.Quantity });
+            var json = JsonSerializer.Serialize(orderItems);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        try
-        {
-            var client = _httpClientFactory.CreateClient();
-            var response = await client.PostAsync(functionUrl, content);
-            if (!response.IsSuccessStatusCode)
+            var functionUrl = _configuration["OrderItemsReserverUrl"];
+            if (string.IsNullOrEmpty(functionUrl))
             {
-                _logger.LogWarning("OrderItemsReserver returned {StatusCode}", response.StatusCode);
+                _logger.LogWarning("OrderItemsReserverUrl is not configured.");
+                return;
+            }
+
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var response = await client.PostAsync(functionUrl, content);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("OrderItemsReserver returned {StatusCode}", response.StatusCode);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning("Failed to call OrderItemsReserver: {Message}", ex.Message);
             }
         }
-        catch (Exception ex)
-        {
-            _logger.LogWarning("Failed to call OrderItemsReserver: {Message}", ex.Message);
-        }
-    }
 
     private async Task SetBasketModelAsync()
     {
