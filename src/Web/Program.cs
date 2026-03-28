@@ -89,6 +89,8 @@ builder.AddSeqEndpoint(connectionName: "seq");
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+builder.Services.AddHttpClient();
+
 var app = builder.Build();
 
 app.Logger.LogInformation("App created...");
