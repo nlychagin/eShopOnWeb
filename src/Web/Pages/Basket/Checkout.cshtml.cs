@@ -66,6 +66,7 @@ public class CheckoutModel : PageModel
 
             // Notify OrderItemsReserver function
             await ReserveOrderItemsAsync(BasketModel.Items);
+            await ProcessDeliveryAsync(BasketModel.Items);
 
             await _basketService.DeleteBasketAsync(BasketModel.Id);
         }
@@ -105,6 +106,53 @@ public class CheckoutModel : PageModel
                 _logger.LogWarning("Failed to call OrderItemsReserver: {Message}", ex.Message);
             }
         }
+
+    private async Task ProcessDeliveryAsync(IReadOnlyCollection<BasketItemViewModel> items)
+{
+    var order = new
+    {
+        shippingAddress = new
+        {
+            street = "123 Main St.",
+            city = "Kent",
+            state = "OH",
+            country = "United States",
+            zipCode = "44240"
+        },
+        items = items.Select(i => new
+        {
+            itemId = i.CatalogItemId,
+            productName = i.ProductName,
+            quantity = i.Quantity,
+            unitPrice = i.UnitPrice
+        }),
+        finalPrice = items.Sum(i => i.Quantity * i.UnitPrice)
+    };
+
+    var json = JsonSerializer.Serialize(order);
+    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+    var functionUrl = _configuration["OrderDeliveryProcessorUrl"];
+    if (string.IsNullOrEmpty(functionUrl))
+    {
+        _logger.LogWarning("OrderDeliveryProcessorUrl is not configured.");
+        return;
+    }
+
+    try
+    {
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.PostAsync(functionUrl, content);
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("OrderDeliveryProcessor returned {StatusCode}", response.StatusCode);
+        }
+    }
+    catch (Exception ex)
+    {
+        _logger.LogWarning("Failed to call OrderDeliveryProcessor: {Message}", ex.Message);
+    }
+}
 
     private async Task SetBasketModelAsync()
     {

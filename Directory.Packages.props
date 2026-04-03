@@ -99,5 +99,6 @@
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Blobs" Version="6.3.0" />
     <PackageVersion Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.16.4" />
     <PackageVersion Include="Azure.Storage.Blobs" Version="12.19.1" />
+    <PackageVersion Include="Microsoft.Azure.Cosmos" Version="3.38.1" />
   </ItemGroup>
 </Project>
