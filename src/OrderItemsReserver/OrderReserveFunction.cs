@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
+using Azure;
 using Azure.Storage.Blobs;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 
 namespace OrderItemsReserver;
@@ -16,43 +16,56 @@ public class OrderReserveFunction
     }
 
     [Function("OrderItemsReserver")]
-    public async Task<HttpResponseData> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestData req)
+    public async Task Run(
+        [ServiceBusTrigger("order-items-reserver", Connection = "ServiceBusConnection")] string message)
     {
-        _logger.LogInformation("OrderItemsReserver function triggered.");
+        _logger.LogInformation("OrderItemsReserver function triggered via Service Bus.");
 
-        // Read the request body
-        var body = await new StreamReader(req.Body).ReadToEndAsync();
-
-        var items = JsonSerializer.Deserialize<List<OrderItem>>(body, new JsonSerializerOptions
+        var items = JsonSerializer.Deserialize<List<OrderItem>>(message, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
 
         if (items == null || items.Count == 0)
         {
-            var badResponse = req.CreateResponse(System.Net.HttpStatusCode.BadRequest);
-            await badResponse.WriteStringAsync("Order request body is empty or invalid.");
-            return badResponse;
+            _logger.LogWarning("Order message is empty or invalid.");
+            throw new ArgumentException("Order message is empty or invalid.");
         }
 
-        // Serialize to indented JSON
         var json = JsonSerializer.Serialize(items, new JsonSerializerOptions { WriteIndented = true });
-
-        // Generate a unique filename using timestamp + GUID
         var fileName = $"{DateTime.UtcNow:yyyy-MM-ddTHH-mm-ss}-{Guid.NewGuid()}-order.json";
 
-        // Upload to Blob Storage
         var connStr = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
-        var blobClient = new BlobClient(connStr, "orders", fileName);
-        await blobClient.UploadAsync(new BinaryData(json));
 
-        _logger.LogInformation("Uploaded order to blob: {FileName}", fileName);
+        // Retry policy: up to 3 attempts
+        int maxRetries = 3;
+        int attempt = 0;
+        bool uploaded = false;
 
-        // Return 200 OK
-        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-        await response.WriteStringAsync($"Order uploaded successfully as {fileName}");
-        return response;
+        while (attempt < maxRetries && !uploaded)
+        {
+            try
+            {
+                attempt++;
+                _logger.LogInformation("Upload attempt {Attempt} for {FileName}", attempt, fileName);
+
+                var blobClient = new BlobClient(connStr, "orders", fileName);
+                await blobClient.UploadAsync(new BinaryData(json));
+
+                uploaded = true;
+                _logger.LogInformation("Uploaded order to blob: {FileName}", fileName);
+            }
+            catch (RequestFailedException ex)
+            {
+                _logger.LogWarning("Attempt {Attempt} failed: {Message}", attempt, ex.Message);
+                if (attempt >= maxRetries)
+                {
+                    _logger.LogError("All {MaxRetries} upload attempts failed for {FileName}.", maxRetries, fileName);
+                    throw; // Re-throw so Service Bus moves message to dead letter queue
+                }
+                await Task.Delay(TimeSpan.FromSeconds(2 * attempt)); // exponential backoff
+            }
+        }
     }
 }
 

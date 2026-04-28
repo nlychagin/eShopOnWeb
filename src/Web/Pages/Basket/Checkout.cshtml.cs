@@ -1,4 +1,5 @@
 ﻿using Ardalis.GuardClauses;
+using Azure.Messaging.ServiceBus;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -64,7 +65,7 @@ public class CheckoutModel : PageModel
             await _basketService.SetQuantities(BasketModel.Id, updateModel);
             await _orderService.CreateOrderAsync(BasketModel.Id, new Address("123 Main St.", "Kent", "OH", "United States", "44240"));
 
-            // Notify OrderItemsReserver function
+            // Send order to Service Bus queue for OrderItemsReserver
             await ReserveOrderItemsAsync(BasketModel.Items);
             await ProcessDeliveryAsync(BasketModel.Items);
 
@@ -80,79 +81,78 @@ public class CheckoutModel : PageModel
     }
 
     private async Task ReserveOrderItemsAsync(IReadOnlyCollection<BasketItemViewModel> items)
+    {
+        var serviceBusConnectionString = _configuration["ServiceBusConnection"];
+        if (string.IsNullOrEmpty(serviceBusConnectionString))
+        {
+            _logger.LogWarning("ServiceBusConnection is not configured.");
+            return;
+        }
+
+        try
         {
             var orderItems = items.Select(i => new { itemId = i.CatalogItemId, quantity = i.Quantity });
             var json = JsonSerializer.Serialize(orderItems);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            var functionUrl = _configuration["OrderItemsReserverUrl"];
-            if (string.IsNullOrEmpty(functionUrl))
-            {
-                _logger.LogWarning("OrderItemsReserverUrl is not configured.");
-                return;
-            }
+            await using var client = new ServiceBusClient(serviceBusConnectionString);
+            var sender = client.CreateSender("order-items-reserver");
+            var message = new ServiceBusMessage(json);
+            await sender.SendMessageAsync(message);
 
-            try
-            {
-                var client = _httpClientFactory.CreateClient();
-                var response = await client.PostAsync(functionUrl, content);
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.LogWarning("OrderItemsReserver returned {StatusCode}", response.StatusCode);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning("Failed to call OrderItemsReserver: {Message}", ex.Message);
-            }
+            _logger.LogInformation("Order sent to Service Bus queue.");
         }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Failed to send order to Service Bus: {Message}", ex.Message);
+        }
+    }
 
     private async Task ProcessDeliveryAsync(IReadOnlyCollection<BasketItemViewModel> items)
-{
-    var order = new
     {
-        shippingAddress = new
+        var order = new
         {
-            street = "123 Main St.",
-            city = "Kent",
-            state = "OH",
-            country = "United States",
-            zipCode = "44240"
-        },
-        items = items.Select(i => new
+            shippingAddress = new
+            {
+                street = "123 Main St.",
+                city = "Kent",
+                state = "OH",
+                country = "United States",
+                zipCode = "44240"
+            },
+            items = items.Select(i => new
+            {
+                itemId = i.CatalogItemId,
+                productName = i.ProductName,
+                quantity = i.Quantity,
+                unitPrice = i.UnitPrice
+            }),
+            finalPrice = items.Sum(i => i.Quantity * i.UnitPrice)
+        };
+
+        var json = JsonSerializer.Serialize(order);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var functionUrl = _configuration["OrderDeliveryProcessorUrl"];
+        if (string.IsNullOrEmpty(functionUrl))
         {
-            itemId = i.CatalogItemId,
-            productName = i.ProductName,
-            quantity = i.Quantity,
-            unitPrice = i.UnitPrice
-        }),
-        finalPrice = items.Sum(i => i.Quantity * i.UnitPrice)
-    };
+            _logger.LogWarning("OrderDeliveryProcessorUrl is not configured.");
+            return;
+        }
 
-    var json = JsonSerializer.Serialize(order);
-    var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-    var functionUrl = _configuration["OrderDeliveryProcessorUrl"];
-    if (string.IsNullOrEmpty(functionUrl))
-    {
-        _logger.LogWarning("OrderDeliveryProcessorUrl is not configured.");
-        return;
-    }
-
-    try
-    {
-        var client = _httpClientFactory.CreateClient();
-        var response = await client.PostAsync(functionUrl, content);
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            _logger.LogWarning("OrderDeliveryProcessor returned {StatusCode}", response.StatusCode);
+            var client = _httpClientFactory.CreateClient();
+            var response = await client.PostAsync(functionUrl, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("OrderDeliveryProcessor returned {StatusCode}", response.StatusCode);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("Failed to call OrderDeliveryProcessor: {Message}", ex.Message);
         }
     }
-    catch (Exception ex)
-    {
-        _logger.LogWarning("Failed to call OrderDeliveryProcessor: {Message}", ex.Message);
-    }
-}
 
     private async Task SetBasketModelAsync()
     {
