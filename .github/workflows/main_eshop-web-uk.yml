@@ -53,14 +53,14 @@ jobs:
       - name: Deploy to UK South Web App (staging)
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'eshop-web-uk-south'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_WEB_SOUTH }}
+          app-name: 'eshop-web-weu-primary'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PRIMARY }}
           package: .
 
       - name: Deploy to UK West Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'eshop-web-uk-west'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_WEB_WEST }}
+          app-name: 'eshop-web-ukwest'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_SECONDARY }}
           package: .
           

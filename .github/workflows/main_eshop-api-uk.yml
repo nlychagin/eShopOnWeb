@@ -50,11 +50,11 @@ jobs:
         with:
           name: .api-app-artifact
 
-      - name: Deploy to UK South Api
+      - name: Deploy to UK West Api
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'eshop-api-uk-south'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_API_SOUTH }}
+          app-name: 'eshop-api-weu-primary'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_API }}
           package: .
           
